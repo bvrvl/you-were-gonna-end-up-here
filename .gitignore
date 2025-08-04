@@ -1,0 +1,26 @@
+# Dependencies
+/node_modules
+/client/node_modules
+/server/node_modules
+
+# Vite build output
+/client/dist
+
+# Vercel deployment output
+/.vercel
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE / OS files
+.DS_Store
+*.suo
+*.user
+*.userosscache
+*.sln
+*.swp
+
+# Dev Files
+collab.txt
