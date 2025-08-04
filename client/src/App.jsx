@@ -1,47 +1,138 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
-function App() {
-  //State to hold the full chain of causes
-  const [causalChain, setCausalChain] = useState([]);
-  //State to hold the next set of choices from the AI
-  const [nextChoices, setNextChoices] = useState([]);
-  //State for the user's text input
+// --- Helper Components ---
+
+const ArrowIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="arrow-icon">
+    <path d="M12 21V3M12 21L17 16M12 21L7 16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const ThemeToggle = ({ theme, onToggle }) => (
+  <button onClick={onToggle} className="theme-toggle" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path className="moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      <g className="sun">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </g>
+    </svg>
+  </button>
+);
+
+
+// --- Screen Components ---
+
+const InitialScreen = ({ onBegin }) => {
   const [userInput, setUserInput] = useState('');
-  //State to manage the loading spinner
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (userInput.trim()) onBegin(userInput);
+  };
+  return (
+    <div className="initial-screen fade-in">
+      <p className="subtitle">Let's trace the path that was laid out for you.</p>
+      <form onSubmit={handleSubmit} className="initial-form">
+        <label htmlFor="initial-cause">It started when you...</label>
+        <input id="initial-cause" type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="e.g., opened your laptop" autoFocus/>
+        <button type="submit" disabled={!userInput.trim()}>Begin the unraveling</button>
+      </form>
+    </div>
+  );
+};
+
+const InteractionLoop = ({ cause, nextChoices, onNext, isLoading }) => {
+  const [userInput, setUserInput] = useState('');
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if(userInput.trim()) {
+      onNext(userInput);
+      setUserInput('');
+    }
+  };
+  return (
+    <div className="interaction-loop">
+      <div className="current-cause fade-in">
+        <p className="because">You are here because:</p>
+        <h2>{cause}</h2>
+      </div>
+      {isLoading ? (
+        <div className="loader"><p>The next step reveals itself...</p><div className="spinner"></div></div>
+      ) : (
+        <div className="choices fade-in">
+          <p className="inevitable">Which was an inevitable consequence of...</p>
+          <div className="button-group">
+            {nextChoices.map((choice, index) => {
+                const cleanChoice = choice.replace(/^\d+\.\s*/, '').trim();
+                return <button key={index} onClick={() => onNext(cleanChoice)}>{cleanChoice}</button>
+            })}
+          </div>
+          <form onSubmit={handleFormSubmit} className="hybrid-input-form">
+            <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="Or was there another reason?"/>
+            <button type="submit" disabled={!userInput.trim()}>Assert Choice</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FinalScreen = ({ chain, onRestart }) => {
+  const reversedChain = [...chain].reverse();
+  return (
+    <div className="final-screen fade-in">
+      <h2>The final cause... and you had no choice in that.</h2>
+      <div className="chain-history-finished">
+        {reversedChain.map((cause, index) => (
+          <div key={index} className="chain-item" style={{ animationDelay: `${index * 0.3}s` }}>
+            <p>{cause}</p>
+            {index < reversedChain.length - 1 && <ArrowIcon />}
+          </div>
+        ))}
+      </div>
+      <p className="final-text">Every step, every choice, a link in a chain forged long before you arrived.</p>
+      <button onClick={onRestart} className="restart-button">Witness Another Inevitability</button>
+    </div>
+  );
+};
+
+
+// --- Main App Component ---
+
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [causalChain, setCausalChain] = useState([]);
+  const [nextChoices, setNextChoices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  //State to manage the final screen
   const [isFinished, setIsFinished] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
 
-  // Function that processes any new cause from the user
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const processNewCause = (cause) => {
-    const cleanedCause = cause.includes('. ') ? cause.substring(cause.indexOf('. ') + 2).trim() : cause.trim();
-    if (!cleanedCause) return;
-
-    const updatedChain = [...causalChain, cleanedCause];
-    setCausalChain(updatedChain);
-    setUserInput('');
     setIsLoading(true);
     setNextChoices([]);
+    const updatedChain = [...causalChain, cause];
+    setCausalChain(updatedChain);
 
-    // Call the backend and wait for its instructions
     fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      //Send the entire history
       body: JSON.stringify({ history: updatedChain }),
     })
     .then(res => res.json())
     .then(data => {
       if (data.error) throw new Error(data.error);
-
-      // The backend tells us if the game is over
       if (data.is_finished) {
-        // If it's over, add the AI's final cause to our chain and end
         setCausalChain(prevChain => [...prevChain, data.final_cause]);
         setIsFinished(true);
       } else {
-        // If not over, just display the next choices
         setNextChoices(data.next_choices || []);
       }
     })
@@ -49,85 +140,39 @@ function App() {
     .finally(() => setIsLoading(false));
   };
 
-  //Function to reset the entire experience
+  const handleStart = (initialCause) => {
+    setHasStarted(true);
+    processNewCause(initialCause);
+  };
+  
   const handleRestart = () => {
     setCausalChain([]);
     setNextChoices([]);
-    setUserInput('');
     setIsFinished(false);
+    setHasStarted(false);
   };
 
   return (
     <div className='container'>
-      <header>
-      <h1>You Were Gonna End Up Here</h1>
+      <div className="stars"></div>
+      <div className="twinkling"></div>
+      
+      <header className="main-header">
+          <h1 className="main-title">You were always gonna end up here.</h1>
+          <ThemeToggle theme={theme} onToggle={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')} />
       </header>
+
       <main>
-      {/* The Final Screen */}
-      {isFinished ? (
-        <div className='final-screen'>
-          <h2>The chain has reached its foundational cause:</h2>
-          <div className='chain-history-finished'>
-            {causalChain.map((cause, index) => (
-              <p key={index}>
-                <span>{causalChain.length - index}.
-                </span> {cause}
-              </p>
-            ))}
-          </div>
-            <button onClick={handleRestart} className="restart-button">Trace Another Path</button>
-        </div>
-      ):(
-        <>
-        {/* The interactive part*/}
-        {causalChain.length === 0 ? (
-          // Initial form
-          <form onSubmit={(e) => { e.preventDefault(); processNewCause(userInput); }} className='initial-form'>
-            <p> How did you get here?</p>
-            <input type="text"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder="e.g., I was browsing GitHub..."
-            autoFocus/>
-            <button type="submit" disabled={isLoading}>Begin</button>
-          </form>
-        ) : (
-          // Main interactive loop
-          <div className='current-cause'>
-            <p> You are here because:</p>
-            <h2>{causalChain[causalChain.length - 1]}</h2>
-          </div>
+        {!hasStarted && <InitialScreen onBegin={handleStart} />}
+        {hasStarted && !isFinished && (
+          <InteractionLoop
+            cause={causalChain[causalChain.length - 1]}
+            nextChoices={nextChoices}
+            onNext={processNewCause}
+            isLoading={isLoading}
+          />
         )}
-
-        {isLoading && <p>Thinking...</p>}
-
-        {!isLoading && causalChain.length > 0 && !isFinished && (
-          <div className='choices'>
-            <p>... and that was because?</p>
-            {/* AI Generated Buttons */}
-            {nextChoices.map((choice, index) => {
-              // Remove any leading numbering (e.g., "1. ") but leave full text otherwise
-              const displayText = choice.replace(/^\d+\.\s*/, '').trim();
-              return (
-                <button key={index} onClick={() => processNewCause(choice)}>
-                  {displayText}
-                </button>
-              );
-            })}
-            {/* The user's hybrid text input form */}
-            <form onSubmit={(e) => { e.preventDefault(); processNewCause(userInput); }} className="hybrid-input-form">
-                <input 
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="Or enter your own reason..."
-                />
-                <button type="submit" disabled={!userInput.trim()}>Submit</button>
-            </form>
-          </div>
-        )}
-      </>
-      )}
+        {isFinished && <FinalScreen chain={causalChain} onRestart={handleRestart} />}
       </main>
     </div>
   );
