@@ -2,35 +2,58 @@ import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [serverMessage, setServerMessage] = useState('');
 
-  useEffect(() =>{
+  const [generatedCause, setGeneratedCause] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    fetch('api/test')
-    .then(response => response.json)
+  //Function called when the button is clicked
+  const handleGenerateClick = () => {
+    setIsLoading(true);
+    setGeneratedCause(''); //clear previous cause
+
+    //make a POST request to backend endpoint
+    fetch('api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Will later send data here in the body but not needed now for testing
+      // body: JSON.stringify({ prompt: "some user input"})
+    })
+    .then(response => response.json())
     .then(data => {
-      setServerMessage(data.message);
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setGeneratedCause(data.generated_text);
     })
     .catch(error => {
-      console.error("Error fetching from the server:", error);
-      setServerMessage("Could not connect to the server. Check running status.");
-
+      console.error("Error generating cause:", error);
+      setGeneratedCause(`Error: ${error.message}`);
+    })
+    .finally(() => {
+      setIsLoading(false);
     });
+  };
 
-  }, [])
-
-  return(
+  return (
     <>
-      <h1>You Were Gonna End Up Here</h1>
+      <h1>You Were Going to End Up Here</h1>
       <div className="card">
-        <p>
-          {/*Display Message from the server*/}
-          <strong>BackendStatus:</strong>
-          {serverMessage || "Loading..."}
-          </p>
-          </div> 
+        <button onClick={handleGenerateClick} disabled={isLoading}>
+          {isLoading ? 'Generating...' : 'Why did I end up here?'}
+        </button>
+      </div>
+      {/* Display message from the AI */}
+      {generatedCause && (
+        <div className="result">
+          <p><strong>A possible reason:</strong></p>
+          <blockquote>{generatedCause}</blockquote>
+        </div>
+      )}
     </>
   )
-  }
+}
+
 
   export default App;
