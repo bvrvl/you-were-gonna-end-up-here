@@ -5,7 +5,7 @@
   "description": "A full-stack application for exploring causal chains.",
   "type": "commonjs",
   "scripts": {
-    "dev:server": "node server/index.js",
+    "dev:server": "node api/index.js",
     "dev:client": "vite client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
   },
