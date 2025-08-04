@@ -10,24 +10,29 @@ app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Test API request route
-app.get('api/test', (req, res) => {
-    res.json({ message: "Hello from the server"});
-});
+//Keywords for terminating the chain:
+const END_KEYWORDS = ['born', 'birth', 'conceived'];
 
 // API endpoint for AI generation
 
 app.post('/api/generate', async (req, res) => {
     try {
-      // Read the previous cause
-      // The || provides a default for the very first request
-      // The `||` provides a default for the very first request.
-      const previousCause = req.body.cause || "I clicked a link to get here.";
-      // Better prompt
-      const prompt = `A user's journey is being traced backward. The last known step is: "${previousCause}"
+      const { cause, chainLength } = req.body;
+      //Check for the end condition. Check if user just clicked a terminal keyword.
+      const isEndCondition = END_KEYWORDS.some(keyword => cause.toLowerCase().includes(keyword));
+      if (isEndCondition) {
+        // If it's an end condition, we stop and send a final message.
+        return res.json({
+          is_end: true,
+          final_message: "Which was the one event you had no choice in."
+        });
+      }
 
-    What is a plausible preceding cause for that? Generate 3 distinct and brief options.
-    The tone should be slightly philosophical and deterministic.
+      // Prompt aware of the chain's depth. AI can generate more fundamental causes as the chain grows
+      const prompt = `A user's journey is being traced backward. We are ${chainLength} steps deep. The last known step is: "${cause}"
+
+    What is a plausible preceding cause for that? Generate 3 distinct and brief options that dig deeper into personal, social, or biological reasons. As the number of steps increases, the reasons should become more fundamental.
+    One of the options should eventually lead to birth or a similar foundational origin.
 
     Format the response ONLY as a numbered list, like this:
     1. First plausible cause.
