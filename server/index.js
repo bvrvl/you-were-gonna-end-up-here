@@ -93,7 +93,7 @@ app.post('/api/generate', async (req, res) => {
 
 
 //For local testing
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+app.listen(3001, () => console.log('Server running on http://localhost:3001'));
 
 // export Express app instance to be used as a serverless function
 module.exports = app;

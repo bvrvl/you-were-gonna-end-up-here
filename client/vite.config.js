@@ -2,12 +2,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // This explicitly tells Vite to build into a 'dist' folder.
-  // Vercel will look for this folder.
-  build: {
-    outDir: 'dist'
+  server: {
+    proxy: {
+      // This tells Vite that any request starting with /api
+      // should be sent to your backend server on port 3001.
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    }
   }
 })

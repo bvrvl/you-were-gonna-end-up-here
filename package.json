@@ -1,18 +1,38 @@
 {
   "name": "you-were-gonna-end-up-here",
+  "private": true,
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A full-stack application for exploring causal chains.",
+  "type": "commonjs",
+  "scripts": {
+    "dev:server": "node server/index.js",
+    "dev:client": "vite client",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.30.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "vercel": "^44.7.0",
+    "vite": "^7.0.4"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bvrvl/you-were-gonna-end-up-here.git"
   },
-  "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/bvrvl/you-were-gonna-end-up-here/issues"
-  },
-  "homepage": "https://github.com/bvrvl/you-were-gonna-end-up-here#readme"
+  "license": "ISC"
 }
