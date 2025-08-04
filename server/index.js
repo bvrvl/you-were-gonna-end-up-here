@@ -2,7 +2,7 @@
 require('dotenv').config();
 
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const app = express();
 
 //Middleware that parses json bodies from the frontend
@@ -10,47 +10,56 @@ app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+//Adding a strict, structured output
+const causalChainSchema = {
+    type: SchemaType.OBJECT,
+    propertyOrdering: ["is_finished", "next_choices", "final_cause"],
+    properties: {
+      is_finished: {
+        type: SchemaType.BOOLEAN,
+        description: "…"
+      },
+      next_choices: {
+        type: SchemaType.ARRAY,
+        minItems: 3,
+        maxItems: 3,
+        items: { type: SchemaType.STRING },
+        description: "…"
+      },
+      final_cause: {
+        type: SchemaType.STRING,
+        description: "…"
+      }
+    },
+    required: ["is_finished", "next_choices", "final_cause"]
+  };
+
+
 // API endpoint for AI generation
 app.post('/api/generate', async (req, res) => {
     try {
-      const { cause, chainLength } = req.body;
+      //Let the model see the entire history now.
+      const { history } = req.body;
 
-      //Better prompt that decides when to end. No more keywords now.
-      const prompt = `
-      You are the engine for a philosophical app. A user is tracing their causal chain backward.
-      The user's last stated reason is: "${cause}".
-      The chain is currently ${chainLength} steps long.
+      if (!history || history.length === 0) {
+        return res.status(400).json({ error: "History is required." });
+      }
 
-      Your Task:
-      1. Analyze the user's reason. Decide if it has reached a truly foundational, unavoidable origin point (e.g., birth, the laws of physics, biological imperatives, consciousness itself).
+      //Better prompt that sees the history now.
+      const prompt = `You are a philosophical engine tracing a user's causal chain backward. 
+      Their history, from recent to oldest, is: ${JSON.stringify(history)}.
+      Analyze their most recent reason: "${history[history.length - 1]}".
       
-      2. Respond with a valid JSON object ONLY. There are two possible formats for your response:
+      Decide if this reason has reached a foundational origin (like birth, genetics, etc.).
+      - If it has, your response should indicate the chain is finished and provide the final cause.
+      - If it has not, provide three new plausible preceding causes.`;;
 
-      - If the chain has NOT reached a foundational origin, generate 3 plausible preceding causes. The JSON object MUST be in this format:
-      {
-        "is_finished": false,
-        "next_choices": [
-          "1. A first plausible preceding cause.",
-          "2. A second plausible preceding cause.",
-          "3. A third plausible preceding cause."
-        ]
-      }
-
-      - If the chain HAS reached a foundational origin, you MUST declare it finished. The JSON object MUST be in this format:
-      {
-        "is_finished": true,
-        "final_cause": "The single, definitive origin you have identified (e.g., 'You were born.')."
-      }
-
-      Analyze the input "${cause}" and provide the appropriate JSON response now.`;
-
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash-lite", 
-        //JSON response
-        generationConfig: { 
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash-lite",
+        generationConfig: {
           temperature: 0.5,
-          response_mime_type: "application/json",
-          thinkingConfig: {thinkingBudget: 0}
+          responseMimeType: "application/json",
+          responseSchema: causalChainSchema
         }
       });
       

@@ -28,7 +28,8 @@ function App() {
     fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cause: cleanedCause, chainLength: updatedChain.length }),
+      //Send the entire history
+      body: JSON.stringify({ history: updatedChain }),
     })
     .then(res => res.json())
     .then(data => {
@@ -57,7 +58,7 @@ function App() {
   };
 
   return (
-    <>
+    <div className='container'>
       <header>
       <h1>You Were Going to End Up Here</h1>
       </header>
@@ -104,11 +105,15 @@ function App() {
           <div className='choices'>
             <p>... and that was because?</p>
             {/* AI Generated Buttons */}
-            {nextChoices.map((choice, index) => (
-              <button key={index} onClick={() => processNewCause(choice)}>
-                {choice.substring(choice.indexOf('.') + 1).trim()}
-              </button>
-            ))}
+            {nextChoices.map((choice, index) => {
+              // Remove any leading numbering (e.g., "1. ") but leave full text otherwise
+              const displayText = choice.replace(/^\d+\.\s*/, '').trim();
+              return (
+                <button key={index} onClick={() => processNewCause(choice)}>
+                  {displayText}
+                </button>
+              );
+            })}
             {/* The user's hybrid text input form */}
             <form onSubmit={(e) => { e.preventDefault(); processNewCause(userInput); }} className="hybrid-input-form">
                 <input 
@@ -124,7 +129,7 @@ function App() {
       </>
       )}
       </main>
-    </>
+    </div>
   );
 }
       
