@@ -72,9 +72,10 @@ app.post('/api/generate', async (req, res) => {
       const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash-lite",
         generationConfig: {
-          temperature: 0.6,
+          temperature: 0.8,
           responseMimeType: "application/json",
-          responseSchema: causalChainSchema
+          responseSchema: causalChainSchema,
+          thinkingConfig: {thinkingBudget: 0}
         }
       });
       
