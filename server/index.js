@@ -10,23 +10,11 @@ app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-//Keywords for terminating the chain:
-const END_KEYWORDS = ['born', 'birth', 'conceived'];
-
 // API endpoint for AI generation
-
 app.post('/api/generate', async (req, res) => {
     try {
+
       const { cause, chainLength } = req.body;
-      //Check for the end condition. Check if user just clicked a terminal keyword.
-      const isEndCondition = END_KEYWORDS.some(keyword => cause.toLowerCase().includes(keyword));
-      if (isEndCondition) {
-        // If it's an end condition, we stop and send a final message.
-        return res.json({
-          is_end: true,
-          final_message: "Which was the one event you had no choice in."
-        });
-      }
 
       // Prompt aware of the chain's depth. AI can generate more fundamental causes as the chain grows
       const prompt = `A user's journey is being traced backward. We are ${chainLength} steps deep. The last known step is: "${cause}"
@@ -39,15 +27,20 @@ app.post('/api/generate', async (req, res) => {
     2. Second plausible cause.
     3. Third plausible cause.`;
 
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite", generationConfig: {thinkingConfig: {thinkingBudget: 0}}, temperature: 0.4 });
+
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash-lite", 
+        generationConfig: { temperature: 0.4 },
+        thinkingConfig:{thinkingBudged: 0}
+      });
+      
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
       // Parse the AI's response into an array
-      //Filter out empty lines and split the text by new lines
-        
-      const choices = text.split('\n').filter(line => line.trim().length > 0);
+      // Filter out empty lines and split the text by new lines
+      const choices = text.split('\n').filter(line => line.trim().length > 0 && line.includes('.'));
 
        // Send the structured array back to the frontend
        res.json({ next_choices: choices });
