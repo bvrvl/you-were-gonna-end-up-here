@@ -60,7 +60,7 @@ function App() {
   return (
     <div className='container'>
       <header>
-      <h1>You Were Going to End Up Here</h1>
+      <h1>You Were Gonna End Up Here</h1>
       </header>
       <main>
       {/* The Final Screen */}
