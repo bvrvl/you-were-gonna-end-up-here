@@ -13,37 +13,53 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // API endpoint for AI generation
 app.post('/api/generate', async (req, res) => {
     try {
-
       const { cause, chainLength } = req.body;
 
-      // Prompt aware of the chain's depth. AI can generate more fundamental causes as the chain grows
-      const prompt = `A user's journey is being traced backward. We are ${chainLength} steps deep. The last known step is: "${cause}"
+      //Better prompt that decides when to end. No more keywords now.
+      const prompt = `
+      You are the engine for a philosophical app. A user is tracing their causal chain backward.
+      The user's last stated reason is: "${cause}".
+      The chain is currently ${chainLength} steps long.
 
-    What is a plausible preceding cause for that? Generate 3 distinct and brief options that dig deeper into personal, social, or biological reasons. As the number of steps increases, the reasons should become more fundamental.
-    One of the options should eventually lead to birth or a similar foundational origin.
+      Your Task:
+      1. Analyze the user's reason. Decide if it has reached a truly foundational, unavoidable origin point (e.g., birth, the laws of physics, biological imperatives, consciousness itself).
+      
+      2. Respond with a valid JSON object ONLY. There are two possible formats for your response:
 
-    Format the response ONLY as a numbered list, like this:
-    1. First plausible cause.
-    2. Second plausible cause.
-    3. Third plausible cause.`;
+      - If the chain has NOT reached a foundational origin, generate 3 plausible preceding causes. The JSON object MUST be in this format:
+      {
+        "is_finished": false,
+        "next_choices": [
+          "1. A first plausible preceding cause.",
+          "2. A second plausible preceding cause.",
+          "3. A third plausible preceding cause."
+        ]
+      }
 
+      - If the chain HAS reached a foundational origin, you MUST declare it finished. The JSON object MUST be in this format:
+      {
+        "is_finished": true,
+        "final_cause": "The single, definitive origin you have identified (e.g., 'You were born.')."
+      }
+
+      Analyze the input "${cause}" and provide the appropriate JSON response now.`;
 
       const model = genAI.getGenerativeModel({ 
         model: "gemini-2.5-flash-lite", 
-        generationConfig: { temperature: 0.4 },
-        thinkingConfig:{thinkingBudged: 0}
+        //JSON response
+        generationConfig: { 
+          temperature: 0.5,
+          response_mime_type: "application/json",
+          thinkingConfig: {thinkingBudget: 0}
+        }
       });
       
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      const text = response.text();
-      
-      // Parse the AI's response into an array
-      // Filter out empty lines and split the text by new lines
-      const choices = text.split('\n').filter(line => line.trim().length > 0 && line.includes('.'));
 
-       // Send the structured array back to the frontend
-       res.json({ next_choices: choices });
+      // The AI's response is a JSON string. We parse it and send it directly to the frontend.
+      const aiResponseObject = JSON.parse(response.text());
+      res.json(aiResponseObject);
   
     } catch (error) {
       console.error("Error calling Gemini API:", error);
