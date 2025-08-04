@@ -17,18 +17,18 @@ const causalChainSchema = {
     properties: {
       is_finished: {
         type: SchemaType.BOOLEAN,
-        description: "…"
+        description: "Set to true only if the chain has reached a foundational origin point."
       },
       next_choices: {
         type: SchemaType.ARRAY,
         minItems: 3,
         maxItems: 3,
         items: { type: SchemaType.STRING },
-        description: "…"
+        description: "An array of 3 strings for plausible preceding causes. Should be empty if is_finished is true."
       },
       final_cause: {
         type: SchemaType.STRING,
-        description: "…"
+        description: "The single, definitive origin cause. Should be an empty string if is_finished is false."
       }
     },
     required: ["is_finished", "next_choices", "final_cause"]
@@ -40,24 +40,39 @@ app.post('/api/generate', async (req, res) => {
     try {
       //Let the model see the entire history now.
       const { history } = req.body;
+      const chainLength = history.length;
 
       if (!history || history.length === 0) {
         return res.status(400).json({ error: "History is required." });
       }
 
       //Better prompt that sees the history now.
-      const prompt = `You are a philosophical engine tracing a user's causal chain backward. 
-      Their history, from recent to oldest, is: ${JSON.stringify(history)}.
-      Analyze their most recent reason: "${history[history.length - 1]}".
-      
-      Decide if this reason has reached a foundational origin (like birth, genetics, etc.).
-      - If it has, your response should indicate the chain is finished and provide the final cause.
-      - If it has not, provide three new plausible preceding causes.`;;
+      const prompt = `You are a philosophical guide. Your goal is to help a user trace their causal chain backward to a satisfying and definitive origin point within 5-8 steps.
+
+      **USER'S HISTORY (recent to oldest):** ${JSON.stringify(history)}
+      **CURRENT CHAIN LENGTH:** ${chainLength}
+
+      **YOUR TASK:**
+      Analyze the most recent event: "${history[history.length - 1]}". Then, follow the appropriate mode below.
+
+      **MODE 1: EXPLORATION (Chain Length < 5)**
+      If the chain is short, your goal is exploration.
+      - Dig deeper with three distinct, insightful, and non-repetitive preceding causes.
+      - Push from psychological reasons towards broader social, environmental, or biological factors.
+      - You MUST respond with "is_finished": false.
+
+      **MODE 2: CONVERGENCE (Chain Length >= 5)**
+      If the chain is getting long, your goal is to guide the user to a conclusion.
+      - You MUST generate one choice that is a definitive, unavoidable origin. Examples: "You were born.", "Your genetic makeup was determined.", "The fundamental laws of physics were set."
+      - Make the other two choices less compelling or more abstract to subtly guide the user to the correct ending.
+      - If the user has already provided or selected a definitive origin themselves, you MUST respond with "is_finished": true and state that origin as the "final_cause".
+
+      Based on these modes and the user's history, generate the appropriate JSON response now.`;
 
       const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash-lite",
         generationConfig: {
-          temperature: 0.5,
+          temperature: 0.6,
           responseMimeType: "application/json",
           responseSchema: causalChainSchema
         }
