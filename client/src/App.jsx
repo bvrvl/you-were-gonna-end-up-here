@@ -2,58 +2,96 @@ import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-
-  const [generatedCause, setGeneratedCause] = useState('');
+  //State to hold the full chain of causes
+  const [causalChain, setCausalChain] = useState([]);
+  //State to hold the next set of choices from the AI
+  const [nextChoices, setNextChoices] = useState([]);
+  //State for the user's initial input
+  const [initialReason, setInitialReason] = useState('');
+  //State to manage the loading spinner
   const [isLoading, setIsLoading] = useState(false);
 
-  //Function called when the button is clicked
-  const handleGenerateClick = () => {
+  //Function to call the backend with a given cause
+  const generateNextCauses = (cause) => {
     setIsLoading(true);
-    setGeneratedCause(''); //clear previous cause
+    setNextChoices([]); //Clear Old choices
 
-    //make a POST request to backend endpoint
-    fetch('api/generate', {
+    fetch ('/api/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Will later send data here in the body but not needed now for testing
-      // body: JSON.stringify({ prompt: "some user input"})
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ cause:cause}),
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      setGeneratedCause(data.generated_text);
+      if (data.error) throw new Error(data.error);
+      setNextChoices(data.next_choices);
     })
-    .catch(error => {
-      console.error("Error generating cause:", error);
-      setGeneratedCause(`Error: ${error.message}`);
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
+    .catch(error => console.error("Error generating next causes:", error))
+    .finally(() => setIsLoading(false));
   };
+
+  //Handler for when a user selects one of the AI's choices
+  const handleChoiceClick = (choice) => {
+    //Add the selected choice to history
+    setCausalChain(prevChain => [...prevChain, choice]);
+    //Ask the AI for the next set of causes based on this new choice
+    generateNextCauses(choice);
+  };
+
+  //Handler for intial submission
+  const handleInitialSubmit = (e) => {
+    e.preventDefault(); //Prevent form from reloading the page
+    if (!initialReason.trim()) return; //Don't submit if empty
+    setCausalChain([initialReason]);
+    generateNextCauses(initialReason);
+  }
 
   return (
     <>
       <h1>You Were Going to End Up Here</h1>
-      <div className="card">
-        <button onClick={handleGenerateClick} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Why did I end up here?'}
-        </button>
-      </div>
-      {/* Display message from the AI */}
-      {generatedCause && (
-        <div className="result">
-          <p><strong>A possible reason:</strong></p>
-          <blockquote>{generatedCause}</blockquote>
+
+      {/* Show the initial input form only if the chain hasn't started */}
+      {causalChain.length === 0 && (
+        <form onSubmit={handleInitialSubmit} className="initial-form">
+          <p>How did you get here?</p>
+          <input
+            type="text"
+            value={initialReason}
+            onChange={(e) => setInitialReason(e.target.value)}
+            placeholder="e.g., I was browsing GitHub..."
+            autoFocus
+          />
+          <button type="submit" disabled={isLoading}>
+            Begin
+          </button>
+        </form>
+      )}
+
+      {/* Display the loading message */}
+      {isLoading && <p>Thinking...</p>}
+
+      {/* Display the next set of choices as buttons */}
+      {!isLoading && nextChoices.length > 0 && (
+        <div className="choices">
+          <p>And why was that?</p>
+          {nextChoices.map((choice, index) => (
+            <button key={index} onClick={() => handleChoiceClick(choice)}>
+              {choice.substring(choice.indexOf('.') + 1).trim()}
+            </button>
+          ))}
         </div>
       )}
+
+      {/* Display the history of the user's causal chain */}
+      <div className="chain-history">
+        {causalChain.map((cause, index) => (
+          <p key={index} style={{ opacity: 1 - (index * 0.15) }}>
+            ... and before that, {cause}
+          </p>
+        )).reverse()}
+      </div>
     </>
-  )
+  );
 }
 
-
-  export default App;
+export default App;

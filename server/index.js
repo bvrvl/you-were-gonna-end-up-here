@@ -19,16 +19,33 @@ app.get('api/test', (req, res) => {
 
 app.post('/api/generate', async (req, res) => {
     try {
-      // Test a simple prompt
-      const prompt = "Why did I end up on this website? Give me one plausible, short reason.";
-  
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite", generationConfig: {thinkingConfig: {thinkingBudget: 0}} });
+      // Read the previous cause
+      // The || provides a default for the very first request
+      // The `||` provides a default for the very first request.
+      const previousCause = req.body.cause || "I clicked a link to get here.";
+      // Better prompt
+      const prompt = `A user's journey is being traced backward. The last known step is: "${previousCause}"
+
+    What is a plausible preceding cause for that? Generate 3 distinct and brief options.
+    The tone should be slightly philosophical and deterministic.
+
+    Format the response ONLY as a numbered list, like this:
+    1. First plausible cause.
+    2. Second plausible cause.
+    3. Third plausible cause.`;
+
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite", generationConfig: {thinkingConfig: {thinkingBudget: 0}}, temperature: 0.4 });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-  
-      // Send the AI's response back to the frontend
-      res.json({ generated_text: text });
+      
+      // Parse the AI's response into an array
+      //Filter out empty lines and split the text by new lines
+        
+      const choices = text.split('\n').filter(line => line.trim().length > 0);
+
+       // Send the structured array back to the frontend
+       res.json({ next_choices: choices });
   
     } catch (error) {
       console.error("Error calling Gemini API:", error);
