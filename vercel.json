@@ -6,17 +6,22 @@
       "use": "@vercel/node"
     },
     {
-      "src": "client/package.json",
+      "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "npm run build",
+        "buildCommand": "vite build",
         "outputDirectory": "dist"
       }
     }
   ],
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/api/generate", "dest": "/api/generate.js" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/api/(.*)",
+      "dest": "api/generate.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }

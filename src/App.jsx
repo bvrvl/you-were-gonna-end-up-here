@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
+
 // --- Helper Components ---
 
 const ArrowIcon = () => (
@@ -110,6 +111,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [error, setError] = useState(null); 
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
@@ -118,6 +120,8 @@ function App() {
   const processNewCause = (cause) => {
     setIsLoading(true);
     setNextChoices([]);
+    //CLEAR previous errors on a new request
+    setError(null);
     const updatedChain = [...causalChain, cause];
     setCausalChain(updatedChain);
 
@@ -126,7 +130,13 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ history: updatedChain }),
     })
-    .then(res => res.json())
+    .then(res => {
+      //check if the response itself is not ok (e.g., status 500)
+      if (!res.ok) {
+          throw new Error('Something went wrong with the server.');
+      }
+      return res.json();
+  })
     .then(data => {
       if (data.error) throw new Error(data.error);
       if (data.is_finished) {
@@ -136,12 +146,17 @@ function App() {
         setNextChoices(data.next_choices || []);
       }
     })
-    .catch(error => console.error("Error processing server response:", error))
-    .finally(() => setIsLoading(false));
-  };
+    .catch(error => {
+      console.error("Error processing server response:", error);
+      //set the error state if something goes wrong
+      setError("The chain has been broken. The path is lost. Please try again.");
+  })
+  .finally(() => setIsLoading(false));
+};
 
   const handleStart = (initialCause) => {
     setHasStarted(true);
+    setError(null); //clear errors on start
     processNewCause(initialCause);
   };
   
@@ -150,6 +165,7 @@ function App() {
     setNextChoices([]);
     setIsFinished(false);
     setHasStarted(false);
+    setError(null); //clear errors on restart
   };
 
   return (

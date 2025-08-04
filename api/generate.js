@@ -1,8 +1,8 @@
 //load env variables first
-require('dotenv').config();
+import 'dotenv/config';
+import express from 'express';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
-const express = require('express');
-const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const app = express();
 
 //Middleware that parses json bodies from the frontend
@@ -95,5 +95,4 @@ app.post('/api/generate', async (req, res) => {
 //For local testing
 app.listen(3001, () => console.log('Server running on http://localhost:3001'));
 
-// export Express app instance to be used as a serverless function
-module.exports = app;
+export default app;
