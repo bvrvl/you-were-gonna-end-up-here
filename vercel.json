@@ -1,27 +1,11 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/generate.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "buildCommand": "vite build",
-        "outputDirectory": "dist"
-      }
-    }
+    { "src": "api/generate.js", "use": "@vercel/node" },
+    { "src": "package.json", "use": "@vercel/static-build" }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/generate.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/generate.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
