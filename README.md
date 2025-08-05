@@ -3,7 +3,7 @@
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live_App-black?style=for-the-badge&logo=vercel)](https://you-were-gonna-end-up-here.vercel.app/)
 [![Join the Discord](https://img.shields.io/badge/Discord-Join_Us-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/5aEuefvvAp)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-blue?style=for-the-badge&logo=github)](https://github.com/bvrvl/you-were-gonna-end-up-here)
-[![License: ISC](https://img.shields.io/badge/License-ISC-purple?style=for-the-badge)](https://opensource.org/licenses/ISC)
+[![License: ISC](https://img.shields.io/badge/License-ISC-purple?style=for-the-badge)](LICENSE)
 
 > "Every step, every choice, a link in a chain forged long before you arrived. You were always gonna end up here."
 
@@ -131,4 +131,4 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 ### License
 
-Distributed under the ISC License. See [LICENSE](https://github.com/bvrvl/you-were-gonna-end-up-here/LICENSE) file for more information.
+Distributed under the ISC License. See [LICENSE](LICENSE) file for more information.
