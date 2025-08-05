@@ -42,14 +42,14 @@ Below are some previews of the application in action.
 
 <br />
 
-<a href="https://github.com/bvrvl/you-were-gonna-end-up-here/blob/main/assets/screenshot1.png" target="_blank">
-  <img src="./assets/screenshot1.png" alt="A screenshot showing the initial phase of the application after the user has defined a premise" width="700"/>
+<a href="https://github.com/bvrvl/you-were-gonna-end-up-here/blob/main/assets/Screenshot1.png" target="_blank">
+  <img src="./assets/Screenshot1.png" alt="A screenshot showing the initial phase of the application after the user has defined a premise" width="700"/>
 </a>
 
 <br />
 
-<a href="https://github.com/bvrvl/you-were-gonna-end-up-here/blob/main/assets/screenshot2.png" target="_blank">
-  <img src="./assets/screenshot2.png" alt="A screenshot showing the end causal chain, with several nodes connected, and the user presented with the final cause" width="700"/>
+<a href="https://github.com/bvrvl/you-were-gonna-end-up-here/blob/main/assets/Screenshot2.png" target="_blank">
+  <img src="./assets/Screenshot2.png" alt="A screenshot showing the end causal chain, with several nodes connected, and the user presented with the final cause" width="700"/>
 </a>
 
 ---
