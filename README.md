@@ -46,6 +46,7 @@ Below are some previews of the application in action.
   <img src="./assets/Screenshot1.png" alt="A screenshot showing the initial phase of the application after the user has defined a premise" width="700"/>
 </a>
 
+---
 <br />
 
 <a href="https://github.com/bvrvl/you-were-gonna-end-up-here/blob/main/assets/Screenshot2.png" target="_blank">
